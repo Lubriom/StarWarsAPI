@@ -12,9 +12,17 @@ Route::prefix('cliente')->group( function () {
     Route::post('/pelicula/personajes', [ClienteController::class, 'personaje'])->name('cliente.personajes');
     Route::get('/vehiculo/{id}', [ClienteController::class, 'detalleVehiculo'])->name('vehiculo.detalle');
 });
-Route::prefix('isaac')->group( function () {
-    Route::resource('personajes', PersonajeController::class);
-    Route::get('/personajes/search/query', [PersonajeController::class, 'search'])->name('personajes.search');
+Route::prefix('api')->group(function () {
+    // Rutas protegidas por el middleware 'validate.token'
+    Route::middleware('validate.token')->group(function () {
+        Route::get('personajes', [PersonajeController::class, 'index']);
+        Route::post('personajes', [PersonajeController::class, 'store']);
+        Route::get('personajes/{id}', [PersonajeController::class, 'show']);
+        Route::put('personajes/{id}', [PersonajeController::class, 'update']);
+        Route::delete('personajes/{id}', [PersonajeController::class, 'destroy']);
+    });
 
+    Route::get('publico', function () {
+        return response()->json(['message' => 'Esta es una ruta pública']);
+    });
 });
-

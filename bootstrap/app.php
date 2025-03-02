@@ -11,7 +11,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
+        // Registrar middleware globales (se aplican a todas las solicitudes)
+        $middleware->append(\App\Http\Middleware\ValidateApiToken::class);
+
+        // Registrar alias para middlewares de ruta
+        $middleware->alias([
+            'validate.token' => \App\Http\Middleware\ValidateApiToken::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

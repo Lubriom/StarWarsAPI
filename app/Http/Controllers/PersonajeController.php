@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Personaje;
+use Illuminate\Support\Facades\Validator;
+
 class PersonajeController extends Controller
 {
     /**
@@ -12,16 +14,10 @@ class PersonajeController extends Controller
     public function index()
     {
         $personajes = Personaje::all();
-        return view('personajes.index', compact('personajes'));
-    }
-
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        return view('personajes.create');
+        return response()->json([
+            'success' => true,
+            'data' => $personajes
+        ]);
     }
 
     /**
@@ -29,7 +25,7 @@ class PersonajeController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'nombre' => 'required|max:255',
             'descripcion' => 'required',
             'vida_maxima' => 'required|integer',
@@ -37,34 +33,57 @@ class PersonajeController extends Controller
             'velocidad' => 'required|integer',
         ]);
 
-        Personaje::create($request->all());
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
 
-        return redirect()->route('personajes.index')->with('success', 'Personaje creado con éxito');
+        $personaje = Personaje::create($request->all());
+
+        return response()->json([
+            'success' => true,
+            'data' => $personaje,
+            'message' => 'Personaje creado con éxito'
+        ], 201);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Personaje $personaje)
+    public function show(string $id)
     {
-        return view('personajes.show', compact('personaje'));
-    }
+        $personaje = Personaje::find($id);
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Personaje $personaje)
-    {
-        return view('personajes.edit', compact('personaje'));
-    }
+        if (!$personaje) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Personaje no encontrado'
+            ], 404);
+        }
 
+        return response()->json([
+            'success' => true,
+            'data' => $personaje
+        ]);
+    }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request,Personaje $personaje)
+    public function update(Request $request, string $id)
     {
-        $request->validate([
+        $personaje = Personaje::find($id);
+
+        if (!$personaje) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Personaje no encontrado'
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
             'nombre' => 'required|max:255',
             'descripcion' => 'required',
             'vida_maxima' => 'required|integer',
@@ -72,39 +91,69 @@ class PersonajeController extends Controller
             'velocidad' => 'required|integer',
         ]);
 
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
         $personaje->update($request->all());
 
-        return redirect()->route('personajes.index')->with('success', 'Personaje actualizado con éxito');
+        return response()->json([
+            'success' => true,
+            'data' => $personaje,
+            'message' => 'Personaje actualizado con éxito'
+        ]);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Personaje $personaje)
+    public function destroy(string $id)
     {
-        $personaje->delete(); // Eliminar el personaje
+        \Log::info("Intentando eliminar personaje con ID: {$id}");  // Añadir un log
 
-        return redirect()->route('personajes.index')->with('success', 'Personaje eliminado con éxito');
-    }
-    public function search(Request $request)
-    {
-        $query = $request->input('query');
+        $personaje = Personaje::find($id);
 
-        // Buscar el personaje
-        $personajeEncontrado = Personaje::where('nombre', 'LIKE', "%{$query}%")
-            ->orWhere('descripcion', 'LIKE', "%{$query}%")
-            ->first();
-
-        // Si no se encuentra, mostrar un mensaje de error
-        if (!$personajeEncontrado) {
-            return redirect()->route('personajes.index')
-                ->with('error', 'No se encontró ningún personaje con ese criterio.');
+        if (!$personaje) {
+            \Log::error("Personaje no encontrado con ID: {$id}");  // Añadir log de error
+            return response()->json([
+                'success' => false,
+                'message' => 'Personaje no encontrado'
+            ], 404);
         }
 
-        // Obtener todos los personajes para mostrar la tabla
-        $personajes = Personaje::all();
+        $personaje->delete();
 
-        // Devolver la vista con los resultados
-        return view('personajes.index', compact('personajes', 'personajeEncontrado'));
+        \Log::info("Personaje con ID {$id} eliminado con éxito");  // Log de éxito
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Personaje eliminado con éxito'
+        ]);
+    }
+
+
+    /**
+     * Search for characters by name or description.
+     */
+    public function search(Request $request, $query)
+    {
+        $personajes = Personaje::where('nombre', 'LIKE', "%{$query}%")
+            ->orWhere('descripcion', 'LIKE', "%{$query}%")
+            ->get();
+
+        if ($personajes->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se encontraron personajes con ese criterio'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $personajes
+        ]);
     }
 }
