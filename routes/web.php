@@ -9,5 +9,6 @@ Route::get('/', [MainController::class, 'index'])->name('home');
 
 Route::prefix('cliente')->group( function () {
     Route::get('/', [ClienteController::class, 'index'])->name('cliente.index');
-    Route::post('/pelicula/personajes', [ClienteController::class, 'personaje'])->name('cliente.personajes');
+    Route::match(['post', 'get'],'/pelicula/personajes', [ClienteController::class, 'personaje'])->name('cliente.personajes');
+    Route::get('/vehiculo/{id}', [ClienteController::class, 'detalleVehiculo'])->name('vehiculo.detalle');
 });
