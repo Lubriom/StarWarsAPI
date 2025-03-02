@@ -26,7 +26,6 @@ class PersonajeController extends Controller
      */
     public function store(Request $request)
     {
-        // Validación de los datos recibidos
         $validator = Validator::make($request->all(), [
             'nombre' => 'required|max:255',
             'descripcion' => 'required',
@@ -35,7 +34,6 @@ class PersonajeController extends Controller
             'velocidad' => 'required|integer',
         ]);
 
-        // Si hay errores en la validación, devuelve una respuesta con los errores
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
@@ -44,17 +42,14 @@ class PersonajeController extends Controller
         }
 
         try {
-            // Creación del personaje utilizando solo los campos necesarios
             $personaje = Personaje::create($request->only(['nombre', 'descripcion', 'vida_maxima', 'danio', 'velocidad']));
 
-            // Respuesta de éxito con el nuevo personaje
             return response()->json([
                 'success' => true,
                 'data' => $personaje,
                 'message' => 'Personaje creado con éxito'
             ], 201);
         } catch (\Exception $e) {
-            // En caso de error en la base de datos, devuelve un error 500
             return response()->json([
                 'success' => false,
                 'message' => 'Hubo un error al crear el personaje',
