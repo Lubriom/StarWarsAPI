@@ -25,10 +25,6 @@ class ClienteController extends Controller
     {
         $vehiculo = Http::get("https://swapi.dev/api/vehicles/{$id}/")->json();
 
-        if (isset($vehiculo['detail']) && $vehiculo['detail'] === 'Not found') {
-            abort(404, "Vehículo no encontrado");
-        }
-
-        return view('cliente.vehiculo', compact('vehiculo'));
+        return view('cliente.vehiculo')->with("vehiculo", $vehiculo);
     }
 }
