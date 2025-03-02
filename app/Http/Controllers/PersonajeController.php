@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Validator;
 
 class PersonajeController extends Controller
 {
+
     /**
      * Display a listing of the resource.
      */
@@ -25,6 +26,7 @@ class PersonajeController extends Controller
      */
     public function store(Request $request)
     {
+        // Validación de los datos recibidos
         $validator = Validator::make($request->all(), [
             'nombre' => 'required|max:255',
             'descripcion' => 'required',
@@ -33,6 +35,7 @@ class PersonajeController extends Controller
             'velocidad' => 'required|integer',
         ]);
 
+        // Si hay errores en la validación, devuelve una respuesta con los errores
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
@@ -40,14 +43,26 @@ class PersonajeController extends Controller
             ], 422);
         }
 
-        $personaje = Personaje::create($request->all());
+        try {
+            // Creación del personaje utilizando solo los campos necesarios
+            $personaje = Personaje::create($request->only(['nombre', 'descripcion', 'vida_maxima', 'danio', 'velocidad']));
 
-        return response()->json([
-            'success' => true,
-            'data' => $personaje,
-            'message' => 'Personaje creado con éxito'
-        ], 201);
+            // Respuesta de éxito con el nuevo personaje
+            return response()->json([
+                'success' => true,
+                'data' => $personaje,
+                'message' => 'Personaje creado con éxito'
+            ], 201);
+        } catch (\Exception $e) {
+            // En caso de error en la base de datos, devuelve un error 500
+            return response()->json([
+                'success' => false,
+                'message' => 'Hubo un error al crear el personaje',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
+
 
     /**
      * Display the specified resource.
@@ -110,50 +125,23 @@ class PersonajeController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy($id)
     {
-        \Log::info("Intentando eliminar personaje con ID: {$id}");  // Añadir un log
+        try {
+            $personaje = Personaje::findOrFail($id);  // Usa findOrFail para obtener el personaje por ID
+            $personaje->delete();
 
-        $personaje = Personaje::find($id);
-
-        if (!$personaje) {
-            \Log::error("Personaje no encontrado con ID: {$id}");  // Añadir log de error
+            return response()->json([
+                'success' => true,
+                'message' => 'Personaje eliminado con éxito'
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Personaje no encontrado'
             ], 404);
         }
-
-        $personaje->delete();
-
-        \Log::info("Personaje con ID {$id} eliminado con éxito");  // Log de éxito
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Personaje eliminado con éxito'
-        ]);
     }
 
 
-    /**
-     * Search for characters by name or description.
-     */
-    public function search(Request $request, $query)
-    {
-        $personajes = Personaje::where('nombre', 'LIKE', "%{$query}%")
-            ->orWhere('descripcion', 'LIKE', "%{$query}%")
-            ->get();
-
-        if ($personajes->isEmpty()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No se encontraron personajes con ese criterio'
-            ], 404);
-        }
-
-        return response()->json([
-            'success' => true,
-            'data' => $personajes
-        ]);
-    }
 }
