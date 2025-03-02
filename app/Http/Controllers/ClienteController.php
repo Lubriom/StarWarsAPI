@@ -21,4 +21,14 @@ class ClienteController extends Controller
         $personajes = array_map(fn($response) => $response->json(), $responses);
         return view('cliente.personaje')->with("personajes", $personajes)->with("pelicula", $pelicula);
     }
+    public function detalleVehiculo($id)
+    {
+        $vehiculo = Http::get("https://swapi.dev/api/vehicles/{$id}/")->json();
+
+        if (isset($vehiculo['detail']) && $vehiculo['detail'] === 'Not found') {
+            abort(404, "Vehículo no encontrado");
+        }
+
+        return view('cliente.vehiculo', compact('vehiculo'));
+    }
 }
