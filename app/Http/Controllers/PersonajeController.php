@@ -37,7 +37,7 @@ class PersonajeController extends Controller
             'velocidad' => 'required|integer',
         ]);
 
-        Personaje::create($request->all()); // Crear el nuevo personaje
+        Personaje::create($request->all());
 
         return redirect()->route('personajes.index')->with('success', 'Personaje creado con éxito');
     }
@@ -72,7 +72,7 @@ class PersonajeController extends Controller
             'velocidad' => 'required|integer',
         ]);
 
-        $personaje->update($request->all()); // Actualizar el personaje
+        $personaje->update($request->all());
 
         return redirect()->route('personajes.index')->with('success', 'Personaje actualizado con éxito');
     }
@@ -85,5 +85,26 @@ class PersonajeController extends Controller
         $personaje->delete(); // Eliminar el personaje
 
         return redirect()->route('personajes.index')->with('success', 'Personaje eliminado con éxito');
+    }
+    public function search(Request $request)
+    {
+        $query = $request->input('query');
+
+        // Buscar el personaje
+        $personajeEncontrado = Personaje::where('nombre', 'LIKE', "%{$query}%")
+            ->orWhere('descripcion', 'LIKE', "%{$query}%")
+            ->first();
+
+        // Si no se encuentra, mostrar un mensaje de error
+        if (!$personajeEncontrado) {
+            return redirect()->route('personajes.index')
+                ->with('error', 'No se encontró ningún personaje con ese criterio.');
+        }
+
+        // Obtener todos los personajes para mostrar la tabla
+        $personajes = Personaje::all();
+
+        // Devolver la vista con los resultados
+        return view('personajes.index', compact('personajes', 'personajeEncontrado'));
     }
 }

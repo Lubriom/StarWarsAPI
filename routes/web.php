@@ -14,4 +14,7 @@ Route::prefix('cliente')->group( function () {
 });
 Route::prefix('isaac')->group( function () {
     Route::resource('personajes', PersonajeController::class);
+    Route::get('/personajes/search/query', [PersonajeController::class, 'search'])->name('personajes.search');
+
 });
+
